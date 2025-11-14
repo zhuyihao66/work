@@ -5,6 +5,8 @@ import com.volcengine.tos.TOSV2ClientBuilder;
 import com.volcengine.tos.TosClientException;
 import com.volcengine.tos.TosServerException;
 import com.volcengine.tos.model.object.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -38,19 +40,20 @@ public class TosUtil {
     @Value("${app.tos.domain:}")
     private String domain; // CDN域名或存储桶域名，用于返回可访问的URL
 
+    private static final Logger log = LoggerFactory.getLogger(TosUtil.class);
     private TOSV2 tosClient;
+    private boolean enabled = false;
 
     @PostConstruct
     public void init() {
-        if (endpoint == null || endpoint.isEmpty() ||
-            region == null || region.isEmpty() ||
-            accessKey == null || accessKey.isEmpty() ||
-            secretKey == null || secretKey.isEmpty() ||
-            bucketName == null || bucketName.isEmpty()) {
-            throw new IllegalStateException("TOS配置不完整，请检查application.yml中的app.tos配置");
+        if (isBlank(endpoint) || isBlank(region) || isBlank(accessKey)
+                || isBlank(secretKey) || isBlank(bucketName)) {
+            log.warn("TOS 未配置完整，文件上传相关能力将被禁用。请在生产环境中配置 app.tos.*");
+            enabled = false;
+            return;
         }
-        // TOSV2ClientBuilder.build(region, endpoint, accessKey, secretKey)
         tosClient = new TOSV2ClientBuilder().build(region, endpoint, accessKey, secretKey);
+        enabled = true;
     }
 
     /**
@@ -64,6 +67,7 @@ public class TosUtil {
      */
     public String uploadFile(InputStream inputStream, String objectKey, String contentType) 
             throws TosClientException, TosServerException {
+        ensureEnabled();
         PutObjectInput putObjectInput = new PutObjectInput()
                 .setBucket(bucketName)
                 .setKey(objectKey)
@@ -91,6 +95,7 @@ public class TosUtil {
      */
     public InputStream downloadFile(String objectKey) 
             throws TosClientException, TosServerException {
+        ensureEnabled();
         GetObjectV2Input input = new GetObjectV2Input()
                 .setBucket(bucketName)
                 .setKey(objectKey);
@@ -107,6 +112,7 @@ public class TosUtil {
      */
     public void deleteFile(String objectKey) 
             throws TosClientException, TosServerException {
+        ensureEnabled();
         DeleteObjectInput deleteObjectInput = new DeleteObjectInput()
                 .setBucket(bucketName)
                 .setKey(objectKey);
@@ -147,6 +153,7 @@ public class TosUtil {
      */
     public List<String> listObjects(String prefix, int maxKeys) 
             throws TosClientException, TosServerException {
+        ensureEnabled();
         List<String> objectKeys = new ArrayList<>();
         ListObjectsType2Input input = new ListObjectsType2Input()
                 .setBucket(bucketName)
@@ -200,6 +207,16 @@ public class TosUtil {
         }
         
         return url;
+    }
+
+    private void ensureEnabled() {
+        if (!enabled) {
+            throw new IllegalStateException("TOS 未配置，当前环境不支持对象存储操作。");
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }
 

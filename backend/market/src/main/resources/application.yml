@@ -1,13 +1,14 @@
 spring:
   datasource:
-    url: jdbc:mysql://101.126.86.48:3306/sencondhand_market
-    username: root
-    password: nyg4!65k
+    url: ${DB_URL:jdbc:mysql://localhost:3306/sencondhand_market?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
   redis:
-    host: 101.126.86.48
-    port: 6379
-    password: 123456
+    host: ${REDIS_HOST:127.0.0.1}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DATABASE:0}
 mybatis-plus:
   mapper-locations: classpath*:/mappers/**/*.xml
   configuration:
@@ -17,19 +18,21 @@ mybatis-plus:
 
 app:
   jwt:
-    secret: "yhzhu"
-    expireMinutes: 120
-  uploadDir: uploads
+    secret: ${APP_JWT_SECRET:local-dev-secret}
+    expireMinutes: ${APP_JWT_EXPIRE_MINUTES:120}
+  uploadDir: ${APP_UPLOAD_DIR:uploads}
+  cors:
+    allowedOrigins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
   tos:
-    endpoint: "tos-cn-beijing.volces.com"  # TOS endpoint
-    region: "cn-beijing"  # TOS region，格式：cn-beijing（不是完整endpoint）
-    accessKey:  ${VOLC_ACCESS_KEY_ID}
-    secretKey:  ${VOLC_ACCESS_KEY_SECRET}
-    bucketName: "work2"
+    endpoint: ${TOS_ENDPOINT:tos-cn-beijing.volces.com}  # TOS endpoint
+    region: ${TOS_REGION:cn-beijing}  # TOS region，格式：cn-beijing（不是完整endpoint）
+    accessKey: ${VOLC_ACCESS_KEY_ID:}
+    secretKey: ${VOLC_ACCESS_KEY_SECRET:}
+    bucketName: ${TOS_BUCKET_NAME:work2}
 
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 
 

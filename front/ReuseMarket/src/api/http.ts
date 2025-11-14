@@ -2,8 +2,18 @@ import axios from 'axios'
 import { useAuthStore } from '../store/auth'
 import router from '../router'
 
+function resolveBaseURL() {
+  if (import.meta.env.VITE_API_BASE) {
+    return import.meta.env.VITE_API_BASE
+  }
+  if (typeof window !== 'undefined' && window.location) {
+    return window.location.origin
+  }
+  return 'http://localhost:8080'
+}
+
 const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:8080'
+  baseURL: resolveBaseURL()
 })
 
 export const apiBase: string = (http.defaults.baseURL as string) || ''

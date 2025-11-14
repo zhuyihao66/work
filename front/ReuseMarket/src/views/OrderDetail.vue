@@ -37,7 +37,7 @@
         <div class="actions">
           <el-button v-if="info.status==='pending'" @click="pay" type="primary">模拟支付</el-button>
           <el-button v-if="info.status==='pending'" @click="cancel" type="danger" plain>取消订单</el-button>
-          <el-button v-if="info.status==='shipped'" @click="confirm" type="success">确认收货</el-button>
+          <el-button v-if="info.status==='shipped' && !sellerView" @click="confirm" type="success">确认收货</el-button>
         </div>
       </div>
     </el-card>
@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import http from '../api/http'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -91,11 +91,12 @@ const info = ref<any>(null)
 const loadingInfo = ref(true)
 const shipments = ref<any[]>([])
 const loadingShip = ref(true)
+const sellerView = computed(() => route.query.from === 'seller')
 // 发货 UI 已移除（仅在我的出售页面可发货）
 
 async function load(){
   const id = route.params.id
-  const fromSeller = route.query.from === 'seller'
+  const fromSeller = sellerView.value
   let orderLoaded = false
   
   // 根据来源决定使用哪个接口
@@ -162,6 +163,10 @@ async function pay(){
 // 发货逻辑仅在我的出售页面触发
 
 async function confirm(){
+  if (sellerView.value) {
+    ElMessage.warning('卖家无需确认收货')
+    return
+  }
   const id = route.params.id
   const { data } = await http.post(`/api/orders/${id}/confirm`)
   if (data.code===0){ ElMessage.success('已完成'); await load() } else ElMessage.error(data.message)
